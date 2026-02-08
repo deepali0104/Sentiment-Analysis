@@ -166,9 +166,14 @@ def predict_sentiment(text):
     seq = tokenizer.texts_to_sequences([processed])
     pad = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
     prob = model.predict(pad, verbose=0)[0][0]
+
+    prob = float(prob)  # FIX
+    prob = max(0.0, min(1.0, prob))  # safety clamp
+
     sentiment = "Positive" if prob >= 0.5 else "Negative"
     confidence = prob if prob >= 0.5 else 1 - prob
     words = get_influential_words(text)
+
     return sentiment, confidence, words
 
 # ---------------------------------
@@ -211,8 +216,10 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-            st.progress(confidence, text=f"{confidence*100:.1f}% confidence")
+            st.progress(float(confidence), text=f"{confidence*100:.1f}% confidence")
 
             if words:
-                badges = "".join([f"<span class='word-badge'>{w}</span>" for w in words])
+                badges = "".join(
+                    [f"<span class='word-badge'>{w}</span>" for w in words]
+                )
                 st.markdown(badges, unsafe_allow_html=True)
